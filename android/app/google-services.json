@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "185980805978",
+    "project_id": "rtrx-cc137",
+    "storage_bucket": "rtrx-cc137.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:185980805978:android:faec9db19ca6de22ee0963",
+        "android_client_info": {
+          "package_name": "com.rtrx.project1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB0LMJwmNpVp2q5N5dVxzRIuxcZVfaNtnQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
