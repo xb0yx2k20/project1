@@ -77,4 +77,28 @@ class FirestoreService {
         .doc(recordId)
         .delete();
   }
+
+  Future<void> deleteVehicle(String vehicleId) async {
+    // Delete all maintenance records first
+    final records = await _db
+        .collection('users')
+        .doc(userId)
+        .collection('vehicles')
+        .doc(vehicleId)
+        .collection('maintenanceRecords')
+        .get();
+
+    final batch = _db.batch();
+    for (final doc in records.docs) {
+      batch.delete(doc.reference);
+    }
+    // Delete vehicle document
+    batch.delete(_db
+        .collection('users')
+        .doc(userId)
+        .collection('vehicles')
+        .doc(vehicleId));
+
+    await batch.commit();
+  }
 }

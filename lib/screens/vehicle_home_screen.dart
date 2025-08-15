@@ -59,6 +59,7 @@ class _VehicleHomeScreenState extends State<VehicleHomeScreen> {
                 selectedVehicleId: _selectedVehicleId!,
                 onSelected: (id) => setState(() => _selectedVehicleId = id),
                 onAddVehicle: _goToAddVehicle,
+                onDeleteVehicle: _showDeleteVehicleDialog,
               ),
               Padding(
                 padding:
@@ -86,11 +87,50 @@ class _VehicleHomeScreenState extends State<VehicleHomeScreen> {
                       separatorBuilder: (_, __) => const Divider(height: 1),
                       itemBuilder: (context, index) {
                         final r = records[index];
-                        return ListTile(
-                          leading: const Icon(Icons.build_circle_outlined),
-                          title: Text(r.type),
-                          subtitle: Text(
-                            'Пробег: ${r.mileage} км • ${DateFormat('dd.MM.yyyy').format(r.date)}',
+                        return Dismissible(
+                          key: Key(r.id),
+                          direction: DismissDirection.endToStart,
+                          background: Container(
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.only(right: 16),
+                            color: Colors.red,
+                            child:
+                                const Icon(Icons.delete, color: Colors.white),
+                          ),
+                          confirmDismiss: (direction) async {
+                            return await showDialog<bool>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Удалить запись ТО?'),
+                                content: Text(
+                                    'ТО "${r.type}" будет удалено безвозвратно.'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, false),
+                                    child: const Text('Отмена'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, true),
+                                    style: TextButton.styleFrom(
+                                        foregroundColor: Colors.red),
+                                    child: const Text('Удалить'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                          onDismissed: (direction) {
+                            _firestore.deleteMaintenanceRecord(
+                                _selectedVehicleId!, r.id);
+                          },
+                          child: ListTile(
+                            leading: const Icon(Icons.build_circle_outlined),
+                            title: Text(r.type),
+                            subtitle: Text(
+                              'Пробег: ${r.mileage} км • ${DateFormat('dd.MM.yyyy').format(r.date)}',
+                            ),
                           ),
                         );
                       },
@@ -125,6 +165,38 @@ class _VehicleHomeScreenState extends State<VehicleHomeScreen> {
       ),
     );
   }
+
+  Future<void> _showDeleteVehicleDialog(Vehicle vehicle) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Удалить автомобиль?'),
+        content: Text(
+          'Автомобиль "${vehicle.make} ${vehicle.model}" и все записи ТО будут удалены безвозвратно.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Отмена'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Удалить'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      await _firestore.deleteVehicle(vehicle.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${vehicle.make} ${vehicle.model} удален')),
+        );
+      }
+    }
+  }
 }
 
 class _VehicleSwitcher extends StatelessWidget {
@@ -133,12 +205,14 @@ class _VehicleSwitcher extends StatelessWidget {
     required this.selectedVehicleId,
     required this.onSelected,
     required this.onAddVehicle,
+    required this.onDeleteVehicle,
   });
 
   final List<Vehicle> vehicles;
   final String selectedVehicleId;
   final ValueChanged<String> onSelected;
   final Future<void> Function() onAddVehicle;
+  final Future<void> Function(Vehicle) onDeleteVehicle;
 
   @override
   Widget build(BuildContext context) {
@@ -150,10 +224,34 @@ class _VehicleSwitcher extends StatelessWidget {
           for (final v in vehicles)
             Padding(
               padding: const EdgeInsets.only(right: 8),
-              child: ChoiceChip(
-                label: Text('${v.make} ${v.model}'),
-                selected: v.id == selectedVehicleId,
-                onSelected: (_) => onSelected(v.id),
+              child: Stack(
+                children: [
+                  ChoiceChip(
+                    label: Text('${v.make} ${v.model}'),
+                    selected: v.id == selectedVehicleId,
+                    onSelected: (_) => onSelected(v.id),
+                  ),
+                  if (vehicles.length > 1)
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: GestureDetector(
+                        onTap: () => onDeleteVehicle(v),
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.close,
+                            size: 12,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
           ActionChip(
