@@ -17,8 +17,9 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen> {
   final _mileageController = TextEditingController();
   DateTime _date = DateTime.now();
   final _service = FirestoreService();
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
 
+  // Services reference data
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
   List<Map<String, dynamic>> _services = [];
   String? _selectedServiceId;
 
@@ -120,59 +121,172 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Добавить ТО')),
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      appBar: AppBar(
+        title: const Text(
+          'Добавить ТО',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        elevation: 0,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
+      ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(24.0),
         child: Form(
           key: _formKey,
           child: ListView(
             children: [
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .secondaryContainer
+                      .withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.build_circle_outlined,
+                      size: 48,
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Новая запись ТО',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Заполните информацию о проведенном ТО',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 32),
               DropdownButtonFormField<String>(
                 value: _selectedServiceId,
                 items: _services
                     .map(
                       (s) => DropdownMenuItem<String>(
                         value: s['id'] as String,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(child: Text(s['name'] as String)),
-                            if (s['averagePrice'] != null)
-                              Text('${s['averagePrice']} ₽',
-                                  style:
-                                      Theme.of(context).textTheme.labelMedium),
-                          ],
+                        child: Text(
+                          '${s['name']}${s['averagePrice'] != null ? ' (${s['averagePrice']} ₽)' : ''}',
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     )
                     .toList(),
                 onChanged: (val) => setState(() => _selectedServiceId = val),
-                decoration: const InputDecoration(labelText: 'Вид услуги (ТО)'),
+                decoration: InputDecoration(
+                  labelText: 'Вид услуги (ТО)',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  filled: true,
+                  fillColor: Theme.of(context).colorScheme.surface,
+                ),
                 validator: (v) => v == null ? 'Выберите услугу' : null,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 20),
               TextFormField(
                 controller: _mileageController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Пробег (км)'),
+                decoration: InputDecoration(
+                  labelText: 'Пробег (км)',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  filled: true,
+                  fillColor: Theme.of(context).colorScheme.surface,
+                ),
                 validator: (v) => int.tryParse(v ?? '') == null
                     ? 'Введите корректный пробег'
                     : null,
               ),
-              const SizedBox(height: 12),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Дата'),
-                subtitle: Text('${_date.day.toString().padLeft(2, '0')}.'
-                    '${_date.month.toString().padLeft(2, '0')}.${_date.year}'),
-                trailing: const Icon(Icons.calendar_today),
-                onTap: _pickDate,
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color:
+                        Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                    width: 1,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.calendar_today,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Дата',
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelMedium
+                                ?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${_date.day.toString().padLeft(2, '0')}.'
+                            '${_date.month.toString().padLeft(2, '0')}.${_date.year}',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: _pickDate,
+                      child: const Text('Изменить'),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: _save,
-                icon: const Icon(Icons.save),
-                label: const Text('Сохранить'),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton.icon(
+                  onPressed: _save,
+                  icon: const Icon(Icons.save),
+                  label: const Text(
+                    'Сохранить',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
